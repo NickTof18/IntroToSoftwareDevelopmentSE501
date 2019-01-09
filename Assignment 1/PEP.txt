@@ -1,0 +1,1510 @@
+pe;PMJ's MPP ver2012.0 ...
+;The "AS07? Program
+; CMPS 250 - Spring 2017
+; Nicholas Tofani
+; Worked alone
+; No flaws
+;
+; P.M.J., April 2017
+;---------------------------------------------------------------
+;
+;{ HeapInit.pep1 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;===================================================================================
+; H E A P   I N I T I A L I Z A T I O N
+;===================================================================================
+           LDWA      Heap,d                                         ;+ Hhead = @Heap
+           LDWA      1,d                                            ;|
+           STWA      Hhead,d                                        ;+
+           ADDA      4,i                                            ;+ Heap->flink = Hsecond
+           STWA      Hhead,n                                        ;+
+;===================================================================================
+;} HeapInit.pep1 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+           BR        main
+;
+;{ PEP2.pep1 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;-------------------------------------------------------------------
+; Global "low memory" locations used for temporary static storage
+;.GLOBAL    TEMP
+TEMP:      .BLOCK    4
+;.GLOBAL    JUNK
+JUNK:      .BLOCK    2
+;.GLOBAL    SAVED
+SAVED:     .BLOCK    2
+;.GLOBAL    SAVEA
+SAVEA:     .BLOCK    2                                              ;where A is saved statically
+;.GLOBAL    SAVEX
+SAVEX:     .BLOCK    2                                              ;where X is saved statically
+;.GLOBAL    SAVEPP
+SAVEPP:    .BLOCK    2
+;============================================================
+;============================================================
+;============================================================
+;-------------------------------------------------------------CC Corruption
+; Macro to dump the top portion of the stack
+;============================================================
+;} PEP2.pep1 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;---------------------------------------------------------------
+;---------------------------------------------------------------
+;---------------------------------------------------------------
+           .BYTE     31
+string:    .BLOCK    31
+list:      .BLOCK    2
+pString:   .BLOCK    2
+pNode:     .BLOCK    2
+trydCoal:  .BLOCK    2
+array:     .BLOCK    64
+;---------------------------------------------------------------
+msgTrunc:  .ASCII    "--->Input truncated\n\x00"
+msgExcpt:  .ASCII    "--->ERROR: on insert\n\x00"
+msgHFull:  .ASCII    "--->ERROR: heap full\n\x00"
+NL:        .ASCII    "\n\x00"
+LB:        .ASCII    "<\x00"
+RB:        .ASCII    ">\x00"
+;---------------------------------------------------------------
+main:      NOP0
+;LDWA      0, i
+;STWA      trydCoal, d
+;CALL      newList
+;STWA      list,d
+;loop:;;;; STRI      string,i                                       ;
+loop:      NOP0                                                     ;< STRI >
+;;;;;;;;;; PUSH      string,i                                       ;< STRI >
+           STWA      SAVEPP,d                                       ;< PUSH,STRI >
+           LDWA      string,i                                       ;< PUSH,STRI >
+;;;;;;;;;; PUSHA                                                    ;< PUSH,STRI >
+           STWA      -2,s                                           ;< PUSHA,PUSH,STRI >
+           SUBSP     2,i                                            ;< PUSHA,PUSH,STRI >
+           LDWA      SAVEPP,d                                       ;< PUSH,STRI >
+           CALL      STRInput                                       ;< STRI >
+           ADDSP     2,i                                            ;< STRI >
+;;;;;;;;;; TESTWA                                                   ;
+           CPWA      0,i                                            ;< TESTWA >
+           BREQ      ok
+           STRO      msgTrunc,d
+;ok:;;;;;; PUSH      string,i                                       ;
+ok:        NOP0                                                     ;< PUSH >
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      string,d                                       ;< PUSH >
+;STRO string,  d
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      Slength
+           ADDSP     2,i
+;;;;;;;;;; TESTWA                                                   ;
+           CPWA      0,i                                            ;< TESTWA >
+           BREQ      done
+; INCA
+;;;;;;;;;; PUSH      string, i                                      ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      string,i                                       ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      new
+           ADDSP     2,i
+; TESTWA
+;  BREQ      heapFull
+           STWA      pString,d
+           STRO      pString,d
+           Stop
+;--------
+;;;;;;;;;; PUSHA                                                    ;
+           STWA      -2,s                                           ;< PUSHA >
+           SUBSP     2,i                                            ;< PUSHA >
+;;;;;;;;;; PUSH      string,i                                       ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      string,i                                       ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      Scopy
+           ADDSP     4,i
+;--------
+;;;;;;;;;; PUSH      pString,d                                      ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      pString,d                                      ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+;;;;;;;;;; PUSH      list,d                                         ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      list,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      insert
+           ADDSP     4,i
+;;;;;;;;;; TESTWA                                                   ;
+           CPWA      0,i                                            ;< TESTWA >
+           BREQ      except
+;---------
+;;;;;;;;;; PUSH      list,d                                         ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      list,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      prntList
+           ADDSP     2,i
+;---------
+           STRO      NL,d
+           BR        loop
+;---------
+;done:;;;; PUSH      list,d                                         ;
+done:      NOP0                                                     ;< PUSH >
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      list,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      recyList
+           ADDSP     2,i
+;***********************************
+;     This is just here to show it works! && How to use it
+;;;;;;;;;; PUSH      Hhead, d                                       ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      Hhead,d                                        ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      coalesce
+           ADDSP     2, i
+;************************************
+           BR        stop
+;--------
+except:    STRO      msgExcpt,d
+           BR        stop
+heapFull:  NOP0
+;If heaps Full try coalesce then try adding element again
+           LDWA      trydCoal, d
+           CPWA      1, i
+           BREQ      except
+;;;;;;;;;; PUSH      Hhead, d                                       ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      Hhead,d                                        ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      coalesce
+           ADDSP     2, i
+           LDWA      1, i
+           STWA      trydCoal, d
+           BR        ok
+;--------
+stop:      STOP
+           BR        STOPEND
+;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;
+;{ STRInput.pep1 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;.GLOBAL  STRInput
+STRInput:  NOP0
+Sobject:   .EQUATE   6
+capacity:  .EQUATE   0
+ignored:   .EQUATE   2
+           SUBSP     4,i
+           LDWA      0,i
+           STWA      ignored,s
+           LDWX      -1,i
+           LDWA      0,i
+           LDBA      Sobject,sfx
+           STWA      capacity,s
+           LDWX      0,i
+           CPWX      capacity,s
+           BRGE      error
+           LDWA      0,i
+LL0:       CPWX      capacity,s
+           BREQ      full
+           LDBA      charIn,d
+           STBA      Sobject,sfx
+           LDBA      Sobject,sfx
+           CPWA      '\n',i
+           BREQ      LL1
+           ADDX      1,i
+           BR        LL0
+full:      LDWA      ignored,s
+           ADDA      1,i
+           STWA      ignored,s
+           SUBX      1,i
+ignore:    LDBA      charIn,d
+           STBA      Sobject,sfx
+           LDWA      0,i
+           LDBA      Sobject,sfx
+           CPWA      '\n',i
+           BREQ      LL1
+           LDWA      ignored,s
+           ADDA      1,i
+           STWA      ignored,s
+           BR        ignore
+LL1:       LDBA      0,i
+           STBA      Sobject,sfx
+           LDWA      ignored,s
+           BR        return
+error:     LDWA      -1,i
+return:    ADDSP     4,i                                            ;
+           RET                                                      ;
+;} STRInput.pep1 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ BINOutpt.pep1 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;.GLOBAL  BINOutpt
+m:         .EQUATE   4
+digit0:    .ASCII    "0\x00"
+digit1:    .ASCII    "1\x00"
+BINOutpt:  NOP0
+           SUBSP     0,i
+           STWA      SAVED,d
+           LDWA      0,i
+           STWA      -2,s
+           SUBSP     2,i
+           LDWA      SAVED,d
+           STWA      SAVEA,d
+           STWX      SAVEX,d
+           LDWA      m,s
+           LDWX      16,i
+BINOloop:  NOP0
+           CPWX      0,i
+           BREQ      BINOdone
+           ROLA
+           BRC       BINO1
+BINO0:     STRO      digit0,d
+           BR        BINOnext
+BINO1:     STRO      digit1,d
+BINOnext:  NOP0
+           SUBX      1,i
+           BR        BINOloop
+BINOdone:  NOP0
+           LDWX      SAVEX,d
+           LDWA      SAVEA,d
+           ADDSP     0,s
+           ADDSP     2,i
+           RET
+;} BINOutpt.pep1 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ DUMPS.pep1 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;.GLOBAL  DumpS
+Acopy:     .BLOCK    2
+Xcopy:     .BLOCK    2
+display:   .BLOCK    2
+actual:    .BLOCK    2
+dmsg:      .ASCII    "------------------------------- DUMPS\n\x00"
+cmsg:      .ASCII    ",\x00"
+amsg:      .ASCII    "(A=\x00"
+xmsg:      .ASCII    "(X=\x00"
+dlmsg:     .ASCII    ": \x00"
+DumpSN:    .EQUATE   2
+DumpS:     NOP0
+           STWA      Acopy,d
+           STWX      Xcopy,d
+           STRO      dmsg,d
+           STWA      actual,d
+           STRO      amsg,d
+           STWA      SAVEPP,d
+           LDWA      actual,d
+           STWA      -2,s
+           SUBSP     2,i
+           LDWA      SAVEPP,d
+           CALL      HEXOutpt
+           ADDSP     2,i
+           STRO      cmsg,d
+           DECO      actual,d
+           LDBA      ')',i
+           STBA      charOut,d
+           STRO      cmsg,d
+           STWX      actual,d
+           STRO      xmsg,d
+           STWA      SAVEPP,d
+           LDWA      actual,d
+           STWA      -2,s
+           SUBSP     2,i
+           LDWA      SAVEPP,d
+           CALL      HEXOutpt
+           ADDSP     2,i
+           STRO      cmsg,d
+           DECO      actual,d
+           LDBA      ')',i
+           STBA      charOut,d
+           LDBA      '\n',i
+           STBA      charOut,d
+           LDWX      DumpSN,s
+           MOVSPA
+           ADDA      4,i
+           STWA      actual,d
+DumpLoop:  CPWX      0,i
+           BRLE      DumpDone
+           STWA      SAVEPP,d
+           LDWA      actual,d
+           STWA      -2,s
+           SUBSP     2,i
+           LDWA      SAVEPP,d
+           CALL      HEXOutpt
+           ADDSP     2,i
+           STRO      dlmsg,d
+           LDWA      actual,n
+           STWA      display,d
+           STWA      SAVEPP,d
+           LDWA      display,d
+           STWA      -2,s
+           SUBSP     2,i
+           LDWA      SAVEPP,d
+           CALL      HEXOutpt
+           ADDSP     2,i
+           STRO      cmsg,d
+           DECO      display,d
+           LDBA      '\n',i
+           STBA      charOut,d
+           LDWA      actual,d
+           ADDA      2,i
+           STWA      actual,d
+           SUBX      2,i
+           BR        DumpLoop
+DumpDone:  LDWX      Xcopy,d
+           LDWA      Acopy,d
+           RET
+;} DUMPS.pep1 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ HEXOutpt.pep1 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;.GLOBAL  HEXOutpt
+Hm:        .EQUATE   4
+SAVEHO:    .block    2
+SAVEAHO:   .block    2
+SAVEXHO:   .block    2
+HEXtext:   .block    4
+           .word     0
+HEXOutpt:  NOP0
+           SUBSP     0,i
+           STWA      SAVEHO,d
+           LDWA      0,i
+           STWA      -2,s
+           SUBSP     2,i
+           LDWA      SAVEHO,d
+           STWA      SAVEAHO,d
+           STWX      SAVEXHO,d
+           LDWA      Hm,s
+           LDWX      3,i
+HEXOloop:  NOP0
+           CPWX      0,i
+           BRLT      HEXOdone
+           ANDA      0x000F,i
+           CPWA      10,i
+           BRLT      HEX1
+           ADDA      0x0007,i
+HEX1:      ADDA      0x0030,i
+           STBA      HEXtext,x
+           LDWA      Hm,s
+           RORA
+           RORA
+           RORA
+           RORA
+           STWA      Hm,s
+           SUBX      1,i
+           BR        HEXOloop
+HEXOdone:  STRO      HEXtext,d
+           LDWX      SAVEXHO,d
+           LDWA      SAVEAHO,d
+           ADDSP     0,s
+           ADDSP     2,i
+           RET
+;} HEXOutpt.pep1 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ Strings.pep2 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;************************************************************************
+;File:   Strings.pep2
+;
+; A Collection of subprograms providing operations on strings.  Each of
+; these subprograms makes use of a "pseudo String object", which is a
+; representation consisting of n+1 contiguous bytes with the first byte
+; containing the size of the container (which would be n).  This "object"
+; is referenced using the address of the second byte.
+;Author: P.M.J.
+;Date:   Spring 2017
+;************************************************************************
+;
+;} Strings.pep2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ node.pep2 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;} node.pep2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ list.pep2 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;} list.pep2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ insert.pep2 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;address insert(address LL2, address string);
+LL2:       .EQUATE   2
+list2:     .EQUATE   4
+LL3:       .EQUATE   4
+;------
+node:      .BLOCK    2
+insert:    NOP0
+           CALL      newNode
+;;;;;;;;;; TESTWA                                                   ;
+           CPWA      0,i                                            ;< TESTWA >
+           BREQ      LL4
+           STWA      node,d
+;;;;;;;;;; PUSH      LL3,s                                          ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      LL3,s                                          ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+;;;;;;;;;; PUSH      node,d                                         ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      node,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      setDLink
+           ADDSP     4,i
+;;;;;;;;;; PUSH      node,d                                         ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      node,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+;;;;;;;;;; PUSH      list2,s                                        ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      list2,s                                        ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      instNode
+           ADDSP     4,i
+           BR        LL5
+LL4:       NOP0
+LL5:       RET
+;} insert.pep2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ Heap.pep1 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;} Heap.pep1 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ SLength.pep2 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;Slength.pep2
+;
+; A functional subprogram that returns the length of the given
+; string.  This is LL8 by scanning for the terminating null char.
+;
+;.GLOBAL  Slength
+;-----------------------------------------------------------
+; int Slength(char string[]);
+;-----------------------------------------------------------
+LL6:       .EQUATE   2
+;-----------------------------------------------------------
+NC:        .ASCII    "\x00"                                         ;the "null char"
+;-----------------------------------------------------------
+Slength:   NOP0
+;;;;;;;;;; CLWX                                                     ;  X = 0; ;
+           LDWX      0,i                                            ;< CLWX >
+LL7:       LDBA      LL6,sfx                                        ;+ while(string[X] != NC) {
+           CPBA      NC,d                                           ;|
+           BREQ      LL8                                            ;|
+;;;;;;;;;; INCX                                                     ;|   X = X + 1; ;
+           ADDX      1,i                                            ;< INCX >
+           BR        LL7                                            ;+ }
+;----------
+LL8:       STWX      -2,s                                           ;+ A = X;
+           LDWA      -2,s                                           ;+
+LL9:       RET
+;} SLength.pep2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ Scapcity.pep2 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;Scapcity.pep2
+;
+; A functional subprogram that returns the capacity of the given string.
+; Essentially, it returns the value of the "before byte".
+;
+;.GLOBAL  Scapcity
+;-----------------------------------------------------------
+; int capacity(char string[]);
+;-----------------------------------------------------------
+LL10:      .EQUATE   2
+;-----------------------------------------------------------
+;-----------------------------------------------------------
+Scapcity:  NOP0
+           LDWX      -1,i                                           ; A = string[-1];
+           LDBA      LL10,sfx                                       ;
+;----------
+LL11:      RET
+;} Scapcity.pep2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ Scopy.pep2 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;Scopy.pep2
+;
+;
+;
+;.GLOBAL  Scopy
+;-----------------------------------------------------------
+; int Scopy(char source[], char destin[]);
+;-----------------------------------------------------------
+source:    .EQUATE   2
+destin:    .EQUATE   4
+;-----------------------------------------------------------
+LL12:      .ASCII    "\x00"
+;-----------------------------------------------------------
+Scopy:     NOP0
+;;;;;;;;;; CLWX                                                     ;  X = 0; ;
+           LDWX      0,i                                            ;< CLWX >
+LL13:      LDBA      source,sfx                                     ;+ while(source[X] != NC) {
+           CPBA      LL12,d                                         ;|
+           BREQ      LL14                                           ;|
+           STBA      destin,sfx                                     ;|   destin[X] = source[X];
+;;;;;;;;;; INCX                                                     ;|   X = X + 1; ;
+           ADDX      1,i                                            ;< INCX >
+           BR        LL13                                           ;+ }
+;----------
+LL14:      STBA      destin,sfx                                     ;  destin[X] = source[X];
+           STWX      -2,s
+           LDWA      -2,s
+LL15:      RET
+;} Scopy.pep2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ ScompTo.pep2 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;************************************************************************
+; String length subprogram that compares two strings (Sobjects) and
+; returns a number less than zero if the first object is lexiographicall
+; before (i.e. less than) the second, zero if they are equivalent, and a
+; positive number otherwise.
+;
+;********  int ScompTo (char[] Sobject1, char[] Sobject2)
+;
+;-- Arguments -----------------------------------------------------------
+Sobject1:  .EQUATE   2                                              ;formal parameter; address of Sobject
+Sobject2:  .EQUATE   4                                              ;formal parameter; address of Sobject
+;-- Local Data ----------------------------------------------------------
+hold2:     .BLOCK    2
+COMMA:     .ASCII    ",\x00"
+LL16:      .ASCII    "\n\x00"
+;-- Entry Point ---------------------------------------------------------
+;.GLOBAL   ScompTo
+;ScompTo:; SAVEX                                                    ;
+ScompTo:   NOP0                                                     ;< SAVEX >
+           STWX      SAVEX,d                                        ;< SAVEX >
+;<<<<<<<<<
+;           STRO      Sobject1,sf
+;           CHARO     '-',i
+;           STRO      Sobject2,sf
+;>>>>>>>>>
+;;;;;;;;;; CLWA                                                     ;  A = 0; ;
+           LDWA      0,i                                            ;< CLWA >
+;;;;;;;;;; CLWX                                                     ;  X = 0; ;
+           LDWX      0,i                                            ;< CLWX >
+LL17:      NOP0                                                     ;+ LL17 {
+           LDBA      Sobject2,sfx                                   ;| + if(Sobject2[X] == 0x00) {
+;;;;;;;;;; TESTWA                                                   ;| |   EXIT pos; ;
+           CPWA      0,i                                            ;< TESTWA >
+           BREQ      pos                                            ;| + }
+           STWA      hold2,d                                        ;|   hold2 = Sobject2[X];
+           LDBA      Sobject1,sfx                                   ;| + if(Sobject1[X] == 0x00) {
+;;;;;;;;;; TESTWA                                                   ;| |   EXIT makeneg; ;
+           CPWA      0,i                                            ;< TESTWA >
+           BREQ      makeneg                                        ;| + }
+           CPWA      hold2,d                                        ;| + if(Sobject1[X] ? hold2) {
+           BRLT      makeneg                                        ;| |   WHEN < EXIT makeneg;
+           BRGT      makepos                                        ;| |   WHEN > EXIT makepos;
+           NOP0                                                     ;| + }
+;;;;;;;;;; INCX                                                     ;|   X = X + 1; ;
+           ADDX      1,i                                            ;< INCX >
+           BR        LL17                                           ;+ }
+;---------
+makeneg:   LDWA      -1,i
+           BR        LL18
+;---------
+pos:       LDBA      Sobject1,sfx
+;;;;;;;;;; TESTWA                                                   ;
+           CPWA      0,i                                            ;< TESTWA >
+           BREQ      makezero
+makepos:   LDWA      1,i
+           BR        LL18
+;---------
+;makezero: CLWA                                                     ;
+makezero:  NOP0                                                     ;< CLWA >
+           LDWA      0,i                                            ;< CLWA >
+;---------
+;done:;;;; RESTOREX                                                 ;
+LL18:      NOP0                                                     ;< RESTOREX >
+           LDWX      SAVEX,d                                        ;< RESTOREX >
+;<<<<<<<<<
+;           STRO      COMMA,d
+;           DECOA
+;           STRO      LL16,d
+;>>>>>>>>>
+           RET                                                      ;
+;} ScompTo.pep2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ newNode.pep2 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;address newNode();
+newNode:   NOP0
+;;;;;;;;;; PUSH      4,i                                            ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      4,i                                            ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      new
+           ADDSP     2,i
+;PUSHA
+;PUSHA
+;POPX
+;CLWA
+;STWA  0,x
+;STWA  2,x
+;POPA
+           RET
+;} newNode.pep2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ setDLink.pep2 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;void setDLink(address LL19, address DLink);
+LL19:      .EQUATE   2
+DLink:     .EQUATE   4
+setDLink:  NOP0
+           LDWX      LL19,s
+           LDWA      DLink,s
+           STWA      2,x
+           RET
+;} setDLink.pep2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ setFLink.pep2 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;void setFLink(address LL20, address FLink);
+LL20:      .EQUATE   2
+FLink:     .EQUATE   4
+setFLink:  NOP0
+           LDWX      LL20,s
+           LDWA      FLink,s
+           STWA      0,x
+           RET
+;} setFLink.pep2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ getDLink.pep2 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;address getDLink(address node);
+LL21:      .EQUATE   2
+getDLink:  NOP0
+           LDWX      LL21,s
+           LDWA      2,x
+           RET
+;} getDLink.pep2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ getFLink.pep2 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;address getFLink(address node);
+LL22:      .EQUATE   2
+getFLink:  NOP0
+           LDWX      LL22,s
+           LDWA      0,x
+           RET
+;} getFLink.pep2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ newList.pep2 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;address newList();
+newList:   NOP0
+;;;;;;;;;; PUSH      4,i                                            ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      4,i                                            ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      new
+           ADDSP     2,i
+;;;;;;;;;; PUSHA                                                    ;
+           STWA      -2,s                                           ;< PUSHA >
+           SUBSP     2,i                                            ;< PUSHA >
+;;;;;;;;;; PUSHA                                                    ;
+           STWA      -2,s                                           ;< PUSHA >
+           SUBSP     2,i                                            ;< PUSHA >
+;;;;;;;;;; POPX                                                     ;
+           LDWX      0,s                                            ;< POPX >
+           ADDSP     2,i                                            ;< POPX >
+;;;;;;;;;; CLWA                                                     ;
+           LDWA      0,i                                            ;< CLWA >
+           STWA      0,x
+           STWA      2,x
+;;;;;;;;;; POPA                                                     ;
+           LDWA      0,s                                            ;< POPA >
+           ADDSP     2,i                                            ;< POPA >
+           RET
+;} newList.pep2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ nextNode.pep2 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;address nextNode(address node);
+LL23:      .EQUATE   2
+nextNode:  LDWX      LL23,s
+           LDWA      0,x
+           RET
+;} nextNode.pep2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ instNode.pep2 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;************************************************************************
+; Subprogram that takes a LL24 an an initialized LL25 (that is, a LL25
+; whose DLink points to a String Object) and inserts that LL25 into the
+; given LL24 at the proper lexiographic position.
+;
+; address instNode(address LL24, address node);
+;
+;-- Arguments -----------------------------------------------------------
+LL24:      .EQUATE   2
+LL25:      .EQUATE   4
+node2:     .EQUATE   6                                              ;plus 2
+;-- Local Data ----------------------------------------------------------
+prev:      .BLOCK    2                                              ;points to the LL25 before where curr points
+curr:      .BLOCK    2                                              ;points to the current LL25 in the traveral
+data:      .BLOCK    2                                              ;holds the pointer to the String Object of the LL25
+;-- Entry Point ---------------------------------------------------------
+instNode:  NOP0
+;STRO LB,d
+;HEXO LL25,s
+;STRO RB,d
+;;;;;;;;;; PUSH      LL25,s                                         ;+ data = getDLink(node); ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      LL25,s                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      getDLink                                       ;|
+           ADDSP     2,i                                            ;|
+           STWA      data,d                                         ;+
+;;;;;;;;;; MOVE      LL24,s,prev,d                                  ;  prev = LL24; ;
+;;;;;;;;;; SAVEA                                                    ;< MOVE >
+           STWA      SAVEA,d                                        ;< SAVEA,MOVE >
+           LDWA      LL24,s                                         ;< MOVE >
+           STWA      prev,d                                         ;< MOVE >
+;;;;;;;;;; RESTOREA                                                 ;< MOVE >
+           LDWA      SAVEA,d                                        ;< RESTOREA,MOVE >
+;STRO LB,d
+;HEXO prev,d
+;STRO RB,d
+;;;;;;;;;; PUSH      prev,d                                         ;+ curr = nextNode(prev); //curr = prev->FLink; ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      prev,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      nextNode                                       ;|
+           ADDSP     2,i                                            ;|
+           STWA      curr,d                                         ;+
+;STRO LB,d
+;HEXO curr,d
+;STRO RB,d
+;loop:;;;; TESTWA                                                   ;+ while(curr!=NULL) { ;
+LL26:      NOP0                                                     ;< TESTWA >
+           CPWA      0,i                                            ;< TESTWA >
+           BREQ      LL27                                           ;|
+           STWA      curr,d                                         ;|
+;STRO LB,d
+;STRO LB,d
+;HEXO curr,d
+;STRO RB,d
+;STRO RB,d
+;;;;;;;;;; PUSH      curr,d                                         ;| + A = getDLink(curr); ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      curr,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      getDLink                                       ;| |
+           ADDSP     2,i                                            ;| +
+;;;;;;;;;; PUSHA                                                    ;| + A = ScompTo(data,A); ;
+           STWA      -2,s                                           ;< PUSHA >
+           SUBSP     2,i                                            ;< PUSHA >
+;;;;;;;;;; PUSH      data,d                                         ;| | ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      data,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      ScompTo                                        ;| |
+           ADDSP     4,i                                            ;| +
+;;;;;;;;;; TESTWA                                                   ;| + if(A <= 0) { ;
+           CPWA      0,i                                            ;< TESTWA >
+           BRLE      LL27                                           ;| |   BREAK!!!
+           NOP0                                                     ;| | } else {
+;;;;;;;;;; MOVE      curr,d,prev,d                                  ;| |   prev = curr; ;
+;;;;;;;;;; SAVEA                                                    ;< MOVE >
+           STWA      SAVEA,d                                        ;< SAVEA,MOVE >
+           LDWA      curr,d                                         ;< MOVE >
+           STWA      prev,d                                         ;< MOVE >
+;;;;;;;;;; RESTOREA                                                 ;< MOVE >
+           LDWA      SAVEA,d                                        ;< RESTOREA,MOVE >
+;;;;;;;;;; PUSH      curr,d                                         ;| | + curr = getFLink(curr); ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      curr,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      getFLink                                       ;| | |
+           ADDSP     2,i                                            ;| | |
+           STWA      curr,d                                         ;| | +
+           NOP0                                                     ;| | }
+           BR        LL26                                           ;+ }
+;--------
+LL27:      NOP0                                                     ;
+;;;;;;;;;; PUSH      curr,d                                         ;+ setFLink(node,curr); ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      curr,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+;;;;;;;;;; PUSH      node2,s                                        ;| //Note use of node2 here. ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      node2,s                                        ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      setFLink                                       ;|
+           ADDSP     4,i                                            ;+
+;;;;;;;;;; PUSH      LL25,s                                         ;+ setFlink(prev,node); ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      LL25,s                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+;;;;;;;;;; PUSH      prev,d                                         ;| ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      prev,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      setFLink                                       ;|
+           ADDSP     4,i                                            ;+
+           LDWA      LL25,s                                         ;  A = LL25;
+;STRO NL,d
+           RET
+;} instNode.pep2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ prntList.pep2 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;address prntList(address list);
+LL28:      .EQUATE   2
+;----
+LL29:      .BLOCK    2
+LL30:      .BLOCK    2
+COLON:     .ASCII    ": \x00"
+LL31:      .ASCII    "\n\x00"
+prntList:  NOP0
+           HEXO      LL28,s
+           STRO      COLON,d
+           STRO      LL31,d
+;;;;;;;;;; PUSH      LL28,s                                         ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      LL28,s                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      nextNode
+           ADDSP     2,i
+LL32:      NOP0
+;STRO    LB,d
+;HEXOA
+;STRO    RB,d
+;;;;;;;;;; TESTWA                                                   ;
+           CPWA      0,i                                            ;< TESTWA >
+           BREQ      LL33
+           STWA      LL29,d
+;;;;;;;;;; PUSH      LL29,d                                         ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      LL29,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      getDLink
+           ADDSP     2,i
+           STWA      LL30,d
+           HEXO      LL29,d
+           STRO      COLON,d
+           STRO      LL30,n
+           STRO      LL31,d
+;;;;;;;;;; PUSH      LL29,d                                         ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      LL29,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      getFLink
+           ADDSP     2,i
+           BR        LL32
+LL33:      RET
+;} prntList.pep2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ recyList.pep2 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;address recyList(address list);
+LL34:      .EQUATE   2
+;----
+LL35:      .BLOCK    2
+next:      .BLOCK    2
+LL36:      .BLOCK    2
+;---------------------------;
+LL37:      .ASCII    ": \x00"
+LL38:      .ASCII    "\n\x00"
+;---------------------------;
+;loop:;;;; TEST      LL35,d
+recyList:  NOP0
+           HEXO      LL34,s
+           STRO      LL37,d
+           STRO      LL38,d
+;;;;;;;;;; PUSH      LL34,s                                         ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      LL34,s                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      nextNode
+           ADDSP     2,i
+           STWA      LL35,d
+;;;;;;;;;; PUSH      LL34,s                                         ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      LL34,s                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      recycle
+           ADDSP     2,i
+LL39:      NOP0                                                     ;TEST    LL35,d
+           LDWA      LL35,d
+;;;;;;;;;; TESTWA                                                   ;
+           CPWA      0,i                                            ;< TESTWA >
+           BREQ      done
+;;;;;;;;;; PUSH      LL35,d                                         ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      LL35,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      nextNode
+           ADDSP     2,i
+           STWA      next,d
+;---------
+;;;;;;;;;; PUSH      LL35,d                                         ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      LL35,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      getDLink
+           ADDSP     2,i
+           STWA      LL36,d
+;---------
+;;;;;;;;;; PUSH      LL36,d                                         ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      LL36,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      recycle
+           ADDSP     2,i
+;;;;;;;;;; TESTWA                                                   ;
+           CPWA      0,i                                            ;< TESTWA >
+           BRNE      LL40
+;--------
+;;;;;;;;;; PUSH      LL35,d                                         ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      LL35,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      recycle
+           ADDSP     2,i
+;;;;;;;;;; TESTWA                                                   ;
+           CPWA      0,i                                            ;< TESTWA >
+           BRNE      LL40
+;--------
+;;;;;;;;;; MOVE      next,d,LL35,d                                  ;
+;;;;;;;;;; SAVEA                                                    ;< MOVE >
+           STWA      SAVEA,d                                        ;< SAVEA,MOVE >
+           LDWA      next,d                                         ;< MOVE >
+           STWA      LL35,d                                         ;< MOVE >
+;;;;;;;;;; RESTOREA                                                 ;< MOVE >
+           LDWA      SAVEA,d                                        ;< RESTOREA,MOVE >
+           BR        LL39
+;-------
+LL40:      NOP0
+;-------
+LL41:      RET
+;} recyList.pep2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ Heap_new.pep1 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;===================================================================================
+;.GLOBAL  new
+;---------------------------------------------------------------------------------------
+; address new(int length)
+;---------------------------------------------------------------------------------------
+result:    .EQUATE   0
+length:    .EQUATE   4
+;---------------------------------------------------------------------------------------
+new:       SUBSP     2,i                                            ;
+           LDWA      length,s                                       ;+ if(length <=  255) {
+           CPWA      0,i                                            ;|
+           BRLT      LL42                                           ;|
+           CPWA      255,i                                          ;|
+           BRGT      LL42                                           ;|
+           ADDA      1,i                                            ;| + A = malloc((length+1));
+           SUBSP     2,i                                            ;| |
+           STWA      0,s                                            ;| |
+           CALL      malloc                                         ;| |
+           ADDSP     2,i                                            ;| +
+           CPWA      0,i                                            ;| + if(A != 0) {
+           BRLE      LL42                                           ;| |
+           STWA      result,s                                       ;| | + set "before byte" to (length-1)
+           SUBX      1,i                                            ;| | |
+           STWX      length,s                                       ;| | |
+           LDWA      length,s                                       ;| | |
+           LDWX      0,i                                            ;| | |
+           STBA      result,sfx                                     ;| | +
+           LDWA      result,s                                       ;| | }
+           ADDA      1,i                                            ;| + A = A + 1;
+           BR        LL43                                           ;+ }
+LL42:      LDWA      0,i                                            ;
+LL43:      ADDSP     2,i                                            ;
+           RET                                                      ;                 ;
+;} Heap_new.pep1 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ Heap_recycle.pep1 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;===================================================================================
+;.GLOBAL  recycle
+;---------------------------------------------------------------------------------------
+; address recycle(address ref)
+;---------------------------------------------------------------------------------------
+ref:       .EQUATE   2
+;---------------------------------------------------------------------------------------
+recycle:   NOP0
+           LDWX      -1,i                                           ;+ A = "before byte" value at ref
+           LDWA      0,i                                            ;|
+           LDBA      ref,sfx                                        ;+
+           ADDA      1,i                                            ;+ free((ref-1),(A+1));
+           STWA      -2,s                                           ;|
+           LDWA      ref,s                                          ;|
+           SUBA      1,i                                            ;|
+           STWA      -4,s                                           ;|
+           SUBSP     4,i                                            ;|
+           CALL      free                                           ;|
+           ADDSP     4,i                                            ;+
+           RET                                                      ;
+;} Heap_recycle.pep1 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ Heap_malloc.pep1 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;===================================================================================
+;.GLOBAL  malloc
+;---------------------------------------------------------------------------------------
+; address malloc(int need)
+;---------------------------------------------------------------------------------------
+need:      .EQUATE   8
+;---------------------------------------------------------------------------------------
+LL44:      .EQUATE   0                                              ;pointer to previous free element
+LL45:      .EQUATE   2                                              ;pointer to current free element
+LL46:      .EQUATE   4                                              ;pointer to LL46 free element
+LL47:      .BLOCK    2
+;---------------------------------------------------------------------------------------
+malloc:    SUBSP     6,i                                            ;  Room for 3 local variables
+           LDWA      need,s                                         ;+ if(need < 4) {
+           CPWA      4,i                                            ;|
+           BRGE      mchkodd                                        ;|
+           LDWA      4,i                                            ;|   need = 4;
+           STWA      need,s                                         ;|
+           BR        mstart                                         ;+ } else
+;----------------------------
+mchkodd:   RORA                                                     ;+ if((need%2) == 1) {
+           BRC       madd1                                          ;|
+           BR        mstart                                         ;|
+madd1:     ROLA                                                     ;|
+           ADDA      1,i                                            ;|   need = need + 1;
+           STWA      need,s                                         ;+ }
+;----------------------------
+mstart:    LDWA      Hhead,d                                        ;+ LL45 = Hhead
+           STWA      LL45,s                                         ;+
+;----------------------------  a
+mloop:     CPWA      0,i                                            ;+ while((curr != null) &&
+           BREQ      mERROR                                         ;|       (curr->size < need) {
+           ADDA      2,i                                            ;|
+           STWA      HEA,d                                          ;|
+           LDWA      HEA,n                                          ;|   // A = curr->size;
+           CPWA      need,s                                         ;|
+           BRGE      mdo                                            ;|
+           LDWA      LL45,s                                         ;|   + LL44 = LL45;
+           STWA      LL44,s                                         ;|   +
+           LDWA      LL45,sf                                        ;|   + LL45 = curr->flink;
+           STWA      LL45,s                                         ;|   +
+           BR        mloop                                          ;+ }
+;----------------------------
+mdo:       SUBA      need,s                                         ;+ if((curr->size - need) < 4) {
+           CPWA      4,i                                            ;|
+           BRGE      mok                                            ;|
+           LDWA      HEA,n                                          ;|  + need = curr->size;
+           STWA      need,s                                         ;|  +
+           LDWX      LL45,s                                         ;|  + prev->flink = curr->flink;
+           STWX      HEA,d                                          ;|  |
+           LDWA      HEA,n                                          ;|  |
+           STWA      LL44,sf                                        ;|  +
+           BR        mfill                                          ;| } else {
+mok:       NOP0                                                     ;|  +
+           LDWA      LL45,s                                         ;|  + LL46 = LL45 + need;
+           ADDA      need,s                                         ;|  |
+           STWA      LL46,s                                         ;|  +
+;----------------------------;|
+           STWA      LL44,sf                                        ;|    prev->flink = LL46
+;----------------------------;|
+           LDWA      LL45,sf                                        ;|  + next->flink = curr->flink
+           STWA      LL46,sf                                        ;|  +
+;----------------------------;|
+           LDWX      LL45,s                                         ;|  + X = (curr->size - need);
+           ADDX      2,i                                            ;|  |
+           STWX      HEA,d                                          ;|  |
+           LDWX      HEA,n                                          ;|  |
+           SUBX      need,s                                         ;|  +
+;----------------------------;|
+           LDWA      LL46,s                                         ;|  + next->size = X
+           ADDA      2,i                                            ;|  |
+           STWA      HEA,d                                          ;|  |
+           STWX      HEA,n                                          ;|  +
+;----------------------------;+ }
+mfill:     NOP0                                                     ;
+;++++++++++++++++++++++++++++  TEMPORARY CODE TO FILL ALLOCATION
+           LDWA      mcode,d                                        ;+ hfill(curr,need,mcode);
+           STWA      -2,s                                           ;|
+           LDWA      need,s                                         ;|
+           STWA      -4,s                                           ;|
+           LDWA      LL45,s                                         ;|
+           STWA      -6,s                                           ;|
+           SUBSP     6,i                                            ;|
+           CALL      hfill                                          ;|
+           ADDSP     6,i                                            ;+
+           LDWA      mcode,d                                        ;+ if(mcode != "ZZ") {
+           CPWA      0x5a5a,i                                       ;|
+           BREQ      AtLimit                                        ;|
+           ADDA      0x0101,i                                       ;|   mcode =  mcode + 0x0101; //next character
+           STWA      mcode,d                                        ;|
+AtLimit:   NOP0                                                     ;+ }
+;++++++++++++++++++++++++++++
+           LDWA      LL45,s                                         ;  A = LL45;
+           LDWX      need,s                                         ;  X = need;
+           BR        mreturn                                        ;
+;----------------------------
+mERROR:    NOP0
+; CALL     coalesce
+;LDWA     LL47, d
+;CPWA     1, i
+;LDWA     1, i
+;STWA     LL47, d
+;BRNE     malloc
+           LDWA      0,i                                            ;  A = null
+;----------------------------
+mreturn:   ADDSP     6,i                                            ;
+           RET                                                      ;                ;  Remove 3 local variables
+mcode:     .WORD     0x4141                                         ;  a code value
+;-------------------------------------------------------------------
+;} Heap_malloc.pep1 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ Heap_free.pep1 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;===================================================================================
+;.GLOBAL  free
+;---------------------------------------------------------------------------------------
+; address free(address addr, int size)
+;---------------------------------------------------------------------------------------
+addr:      .EQUATE   6                                              ;an address obtainted from a call to malloc
+size:      .EQUATE   8                                              ;the corresponding "need" used when allocating
+;---------------------------------------------------------------------------------------
+fprev:     .EQUATE   0                                              ;pointer to previous free element
+fcurr:     .EQUATE   2                                              ;pointer to current free element
+fnext:     .EQUATE   4                                              ;pointer to next free element
+temper:    .BLOCK    2
+;---------------------------------------------------------------------------------------
+free:      SUBSP     4,i                                            ;  Room for 2 local variables
+;----------------------------;
+           LDWA      size,s                                         ;+ if((size >= 4) && ((size%2) == 0)) {
+           CPWA      4,i                                            ;|
+           BRLT      ferror                                         ;|
+           RORA                                                     ;|
+           BRC       ferror                                         ;|
+;----------------------------;|
+fstart:    LDWA      Hhead,d                                        ;| + if(Hhead < addr) {
+           CPWA      addr,s                                         ;| |
+           BRGE      ferror                                         ;| |
+           STWA      fcurr,s                                        ;| |   fcurr = Hhead;
+floop:     CPWA      0,i                                            ;| | + while((fcurr != null) &&
+           BREQ      ffound                                         ;| | |
+           CPWA      addr,s                                         ;| | |       (fcurr < addr) ) {
+           BRGE      ffound                                         ;| | |
+           LDWA      fcurr,s                                        ;| | | + fprev = fcurr;
+           STWA      fprev,s                                        ;| | | +
+           LDWA      fcurr,sf                                       ;| | | + fcurr = fcurr->flink;
+           STWA      fcurr,s                                        ;| | | +
+           BR        floop                                          ;| | |
+ffound:    NOP0                                                     ;| | + }
+           LDWA      addr,s                                         ;| | + if((addr+size) <= fcurr) {
+           ADDA      size,s                                         ;| | |
+           CPWA      fcurr,s                                        ;| | |
+           BRGT      ferror                                         ;| | |
+           LDWA      fcurr,s                                        ;| | | + addr->flink = fcurr;
+           STWA      addr,sf                                        ;| | | +
+           LDWA      addr,s                                         ;| | | + fprev->flink = addr;
+           STWA      fprev,sf                                       ;| | | +
+           ADDA      2,i                                            ;| | | + addr->size = size;
+           STWA      HEA,d                                          ;| | | |
+           LDWA      size,s                                         ;| | | |
+           STWA      HEA,n                                          ;| | | +
+           NOP0                                                     ;| | + }
+           NOP0                                                     ;| + }
+;fdofill:  NOP0
+;++++++++++++++++++++++++++++++++++++  TEMPORARY CODE TO FILL DEALLOCATION
+           LDWA      fcode,d                                        ;| + hfill((addr+4),(size-4),fcode);
+           STWA      -2,s                                           ;| |
+           LDWA      size,s                                         ;| |
+           SUBA      4,i                                            ;| |   //(size-4),
+           STWA      -4,s                                           ;| |
+           LDWA      addr,s                                         ;| |
+           ADDA      4,i                                            ;| |   //(addr+4)
+           STWA      -6,s                                           ;| |
+           SUBSP     6,i                                            ;| |
+           CALL      hfill                                          ;| |
+           ADDSP     6,i                                            ;| +
+;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+;  LDWA     0,i       ;   A = 0;  //indicates success
+;  LDWA  fprev,s
+; SUBA  1, i
+; PUSHA
+; CALL     coalesce
+;  ADDSP    2, i
+;PUSH addr, s
+;CALL getDLink
+;ADDSP 2, i
+;STWA  temper, d
+;STRO  temper, d
+;  DECO size, s
+;  DECO fprev, d
+;STRO NL, d
+;LDWX 0, i
+;LDWA fprev,s
+;STWA temper, d
+;STRO temper, d
+;PUSH fprev,s
+;CALL Scapcity
+;ADDSP 2, i
+;STWA temper, d
+;STRO temper, d
+;STRO NL, d
+;LDWX  -1, i
+;LDWA 0, i
+;LDBA size, s
+;STBA fcurr
+           LDWA      0,i
+           BR        freturn
+ferror:    LDWA      addr,s
+freturn:   ADDSP     4,i                                            ;
+           RET                                                      ;
+fcode:     .WORD     0x2a2a                                         ;  a code value
+;===================================================================================
+;} Heap_free.pep1 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ Heap_body.pep1 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;===================================================================================
+;.GLOBAL  hfill
+hfaddr:    .EQUATE   2
+hfsize:    .EQUATE   4
+hfcode:    .EQUATE   6
+;===================================================================================
+;  void hfill(address hfaddr, int hfsize, int hfcode)
+;===================================================================================
+hfill:     NOP0
+           LDWX      hfaddr,s
+           ADDX      hfsize,s
+hfloop:    NOP0
+           SUBX      2,i
+           STWX      HEA,d
+           LDWA      hfcode,s
+           STWA      HEA,n
+           CPWX      hfaddr,s
+           BRGT      hfloop
+           RET
+;===================================================================================
+;.GLOBAL  Heap
+;.GLOBAL  Hhead
+;.GLOBAL  HEA
+;===================================================================================
+; H E A P   D A T A
+;===================================================================================
+           .ASCII    "<<<<<<<<"
+Hhead:     .WORD     0                                              ;head of the free list
+Heap:      .WORD     0                                              ;flink to next element
+           .WORD     0                                              ;empty size of the first element
+Hsecond:   .WORD     0                                              ;flink to next element; null
+           .WORD     4096                                           ;size of this second element
+           .BLOCK    4096                                           ;the actual heap space
+HEA:       .BLOCK    2                                              ;temporary static used by the Heap subprograms
+Hmarker:   .ASCII    ">>>>>>>>"
+;===================================================================================
+;} Heap_body.pep1 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;
+;{ Heap_coalesce.pep1 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;The "AS07” Program
+; CMPS 250 - Spring 2017
+; Nicholas Tofani
+; Worked alone
+; No flaws
+;================================================================================++++===
+;.GLOBAL  coalesce
+;---------------------------------------------------------------------------------------
+; int coalesce(address ref);
+;---------------------------------------------------------------------------------------
+; Internal recursive subprogram that traverses the "free list" of the heap identifying
+; and coalescing (i.e. ; joining together) free elements that are physically contiguous so as
+; to result in the largest possible elements throughout the list.
+; The intention is to use Hhead as the initial parameter then it will
+; recursively run passing the LL49 element in the free list as its LL49 parameter
+;   Returns the LL50 of the parameter free list element + recursive LL50
+;---------------------------------------------------------------------------------------
+Scurr:     .EQUATE   2                                              ;pointer to current free element
+LL48:      .BLOCK    2                                              ;an address obtainted from Scurr(Passed Parameter)
+LL49:      .BLOCK    2                                              ;pointer to LL49 free element
+LL50:      .BLOCK    2                                              ;Size of LL48
+temp:      .BLOCK    2
+;---------------------------------------------------------------------------------------
+coalesce:  NOP0
+           LDWA      Scurr, s                                       ; LL48 = Scurr
+           STWA      LL48, d                                        ;
+           LDWA      Scurr, sf                                      ;
+           STWA      LL49, d                                        ; LL49 = curr.flink
+           LDWA      LL49, n                                        ;
+           LDWA      0, i                                           ;
+           LDWA      Scurr, s                                       ; LL50 = curr.next
+           ADDA      2, i                                           ; \
+           STWA      HEA, d                                         ; \
+           LDWA      HEA, n                                         ; \
+           STWA      LL50, d                                        ; \
+           ADDA      Scurr, s                                       ; temp = LL48 + 2
+           STWA      temp, d                                        ; \
+;;;;;;;;;; COMPARE   temp, n, LL49, n                               ; +if(temp == next) ;
+           LDWA      temp,n                                         ;< COMPARE >
+           CPWA      LL49,n                                         ;< COMPARE >
+           BRNE      checkEnd                                       ; |
+;;;;;;;;;; PUSH      LL49, d                                        ; | LL50 = LL50 + coalesce(next) ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      LL49,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      coalesce                                       ; | \
+           ADDSP     2, i                                           ; | \
+           ADDA      LL50, d                                        ; | \
+           STWA      LL48, sfx                                      ; | \ curr.size = LL50
+;++++++++++++++++++++++++++++++++++++  TEMPORARY CODE TO FILL COALESCED AREA
+filling:   LDWA      ccode,d                                        ;| | + hfill((ccurr+4),(csize-4),ccode);
+           STWA      -2,s                                           ;| | |
+           LDWA      LL50, d                                        ;| | |
+           SUBA      4,i                                            ;| | |   //(size-4),
+           STWA      -4,s                                           ;| | |
+           LDWA      Scurr,s                                        ;| | |
+           ADDA      4,i                                            ;| | |   //(addr+4)
+           STWA      -6,s                                           ;| | |
+           SUBSP     6,i                                            ;| | |
+           CALL      hfill                                          ;| | |
+           ADDSP     6,i                                            ;| | +
+;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+checkEnd:  NOP0
+           LDWA      60, i                                          ; temp = Scurr + 60  //30 Char limit.. each char == 2 bytes
+           ADDA      Scurr, s                                       ; \
+           STWA      temp, d                                        ; \
+;;;;;;;;;; COMPARE   temp, n, LL49, n                               ; +if(temp < next) ;
+           LDWA      temp,n                                         ;< COMPARE >
+           CPWA      LL49,n                                         ;< COMPARE >
+           BRGE      creturn                                        ; |
+           LDWA      LL49, n                                        ; | if(next != Null)
+;;;;;;;;;; TESTWA                                                   ; | | ;
+           CPWA      0,i                                            ;< TESTWA >
+           BREQ      creturn                                        ; | |
+;;;;;;;;;; PUSH      LL49, d                                        ; | | coalesce(next) ;
+           STWA      SAVEPP,d                                       ;< PUSH >
+           LDWA      LL49,d                                         ;< PUSH >
+;;;;;;;;;; PUSHA                                                    ;< PUSH >
+           STWA      -2,s                                           ;< PUSHA,PUSH >
+           SUBSP     2,i                                            ;< PUSHA,PUSH >
+           LDWA      SAVEPP,d                                       ;< PUSH >
+           CALL      coalesce                                       ; | |
+           ADDSP     2, i                                           ; | |
+creturn:   NOP0
+           LDWA      LL50, d                                        ;  return LL50
+           RET
+;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ccode:     .ASCII    "$$"                                           ;  a code value
+;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+;} Heap_coalesce.pep1 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+STOPEND:   STOP
+           .END
+;Resolver Report:
+; loop --> LL0
+; done --> LL1
+; list --> LL2
+; string --> LL3
+; except --> LL4
+; return --> LL5
+; string --> LL6
+; loop --> LL7
+; done --> LL8
+; return --> LL9
+; string --> LL10
+; return --> LL11
+; NC --> LL12
+; loop --> LL13
+; done --> LL14
+; return --> LL15
+; NL --> LL16
+; loop --> LL17
+; done --> LL18
+; node --> LL19
+; node --> LL20
+; node --> LL21
+; node --> LL22
+; node --> LL23
+; list --> LL24
+; node --> LL25
+; loop --> LL26
+; done --> LL27
+; list --> LL28
+; curr --> LL29
+; data --> LL30
+; NL --> LL31
+; loop --> LL32
+; done --> LL33
+; list --> LL34
+; curr --> LL35
+; data --> LL36
+; COLON --> LL37
+; NL --> LL38
+; loop --> LL39
+; except --> LL40
+; return --> LL41
+; error --> LL42
+; return --> LL43
+; prev --> LL44
+; curr --> LL45
+; next --> LL46
+; trydCoal --> LL47
+; curr --> LL48
+; next --> LL49
+; size --> LL50

@@ -1,0 +1,68 @@
+;The "MinMax" Program
+; CMPS 250 - Spring 2017
+; Nicholas Tofani
+; Worked alone
+; No flaws
+        BR      main
+;----------------------------------------------------------------------
+; String declarations
+;----------------------------------------------------------------------
+tmsg:   .ASCII  "The min is \x00"
+cmsg:   .ASCII  "The max is \x00"
+;----------------------------------------------------------------------
+; Variables
+;----------------------------------------------------------------------
+value:  .BLOCK  2
+min:  .BLOCK  2
+max:  .BLOCK  2
+;----------------------------------------------------------------------
+; Sub-programs:
+;------------------------------------------------------------
+
+initIt: STWA    max,d   ;|if first iteration, set max = value
+        STWA    min,d   ;| set min = value
+        BR      loop    ;| return to loop
+
+MinSet: STWA    min,d   ;if value < min then set min = value      
+        BR      loop    ;| return to loop
+
+MaxSet: STWA    max,d   ;if value > max then set max = value 
+        BR      loop    ;| return to loop
+
+;----------------------------------------------------------------------
+main:   NOP0
+;------------------------------------------------------------
+; Loop to read and accumulate integer input values
+;------------------------------------------------------------
+
+loop:   DECI    value,d    ;Comparing to 0 for exit
+        LDWA    value,d    ;|
+        CPWA    0,i        ;|
+        BREQ    done       ;|moving to done to end program
+
+        LDWX    min,d      ;On first iteration setting first value as Min&Max
+        CPWX    0,i        ;|
+        BREQ    initIt     ;| calling initIt() subprogram if min == 0
+           
+        CPWA    max, d     ;Comparing value and max 
+        BRGT    MaxSet     ;| if value > max call MaxSet() subprogram
+
+        CPWA    min, d     ;Comparing value and min
+        BRLT    MinSet     ;| if value < min call MinSet() subprogram
+        
+         BR      loop
+done:   NOP0
+
+;------------------------------------------------------------
+; Report the min and max
+;------------------------------------------------------------
+        STRO    tmsg,d
+        DECO    min,d
+        LDBA    '\n',i
+        STBA    charOut,d
+        STRO    cmsg,d
+        DECO    max,d
+        LDBA    '\n',i
+        STBA    charOut,d
+        STOP
+        .END
